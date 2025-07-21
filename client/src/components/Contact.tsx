@@ -1,113 +1,72 @@
-import { useState } from "react";
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { Mail, Phone, MapPin, Send } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest } from '@/lib/queryClient';
 
-const contactInfo = [
-  {
-    icon: Mail,
-    title: "Email Us",
-    value: "hello@znforge.com",
-    delay: 0
-  },
-  {
-    icon: Phone,
-    title: "Call Us",
-    value: "+1 (555) 123-4567",
-    delay: 0.2
-  },
-  {
-    icon: MapPin,
-    title: "Visit Us",
-    value: "123 Tech Street, Digital City",
-    delay: 0.4
-  }
-];
+const contactFormSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  service: z.string().min(1, 'Please select a service'),
+  message: z.string().min(10, 'Message must be at least 10 characters'),
+});
+
+type ContactFormData = z.infer<typeof contactFormSchema>;
 
 export default function Contact() {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    service: "",
-    message: ""
+  
+  const form = useForm<ContactFormData>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      service: '',
+      message: '',
+    },
   });
 
   const contactMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const response = await apiRequest("POST", "/api/contact", data);
-      return response.json();
-    },
-    onSuccess: (data) => {
+    mutationFn: (data: ContactFormData) => apiRequest('/api/contact', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }),
+    onSuccess: () => {
       toast({
-        title: "Message sent successfully!",
-        description: data.message,
+        title: 'Message Sent!',
+        description: 'Thank you for your message. We\'ll get back to you soon.',
       });
-      setFormData({ name: "", email: "", service: "", message: "" });
+      form.reset();
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: "Error sending message",
-        description: error.message || "Please try again later.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to send message. Please try again.',
+        variant: 'destructive',
       });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.service || !formData.message) {
-      toast({
-        title: "Please fill in all fields",
-        description: "All fields are required to send your message.",
-        variant: "destructive",
-      });
-      return;
-    }
-    contactMutation.mutate(formData);
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const onSubmit = (data: ContactFormData) => {
+    contactMutation.mutate(data);
   };
 
   return (
-    <section id="contact" className="py-24 bg-gray-900 relative overflow-hidden">
-      {/* Floating 3D Elements */}
-      <motion.div
-        className="absolute top-20 left-20 w-40 h-40 bg-[var(--emerald)] opacity-5 rounded-full"
-        animate={{
-          scale: [1, 1.2, 1],
-          y: [0, -15, 0],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        className="absolute bottom-20 right-20 w-32 h-32 border-2 border-[var(--emerald)] opacity-5 transform rotate-45"
-        animate={{
-          rotate: [45, 405],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{
-          duration: 15,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-      />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section id="contact" className="py-20 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
+      <div className="container mx-auto px-6">
         <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 30 }}
@@ -115,143 +74,219 @@ export default function Contact() {
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-4xl md:text-5xl font-black text-[var(--emerald)] mb-4">Get In Touch</h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Ready to transform your digital presence? Let's discuss your project and create something amazing together.
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900 dark:text-white">
+            Get in Touch
+          </h2>
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            Ready to start your project? Let's discuss your ideas and bring them to life
           </p>
         </motion.div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+          {/* Contact Form */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h3 className="text-2xl font-bold text-white mb-6">Let's Start a Conversation</h3>
-            <div className="space-y-6">
-              {contactInfo.map((info, index) => (
-                <motion.div
-                  key={info.title}
-                  className="flex items-center space-x-4"
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: info.delay }}
-                  viewport={{ once: true }}
-                >
-                  <motion.div
-                    className="w-12 h-12 bg-[var(--emerald)] rounded-full flex items-center justify-center"
-                    animate={{
-                      scale: [1, 1.1, 1],
-                    }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: index * 0.5,
-                    }}
-                  >
-                    <info.icon className="h-6 w-6 text-white" />
-                  </motion.div>
-                  <div>
-                    <h4 className="text-white font-semibold">{info.title}</h4>
-                    <p className="text-gray-400">{info.value}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-2xl text-gray-900 dark:text-white">Send us a Message</CardTitle>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Fill out the form below and we'll get back to you within 24 hours.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Your full name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input placeholder="your.email@example.com" type="email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="service"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Service Interested In</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a service" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="full-stack-development">Full-Stack Development</SelectItem>
+                              <SelectItem value="vps-hosting">VPS Hosting</SelectItem>
+                              <SelectItem value="seo-optimization">SEO Optimization</SelectItem>
+                              <SelectItem value="custom-solution">Custom Solution</SelectItem>
+                              <SelectItem value="consultation">Consultation</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="message"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Message</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Tell us about your project..."
+                              rows={5}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full bg-[var(--emerald)] hover:bg-[var(--emerald-light)]"
+                      disabled={contactMutation.isPending}
+                    >
+                      {contactMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="mr-2 h-4 w-4" />
+                          Send Message
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
           </motion.div>
-          
+
+          {/* Contact Information */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
+            className="space-y-8"
+            initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <Card className="glass-effect bg-transparent border-white/10">
-              <CardContent className="p-8">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <Label htmlFor="name" className="text-white text-sm font-medium mb-2 block">
-                      Name
-                    </Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
-                      className="bg-[var(--charcoal)] border-[var(--emerald)]/30 text-white focus:border-[var(--emerald)] focus:ring-[var(--emerald)]"
-                      placeholder="Your name"
-                      required
-                    />
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl text-gray-900 dark:text-white">Contact Information</CardTitle>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Get in touch through any of these channels
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <motion.div 
+                  className="flex items-start space-x-4"
+                  whileHover={{ x: 5, transition: { duration: 0.3 } }}
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-[var(--emerald)] to-[var(--emerald-light)] rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-6 w-6 text-white" />
                   </div>
-                  
                   <div>
-                    <Label htmlFor="email" className="text-white text-sm font-medium mb-2 block">
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      className="bg-[var(--charcoal)] border-[var(--emerald)]/30 text-white focus:border-[var(--emerald)] focus:ring-[var(--emerald)]"
-                      placeholder="your@email.com"
-                      required
-                    />
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Email</h3>
+                    <p className="text-gray-600 dark:text-gray-300">hello@znforge.dev</p>
+                    <p className="text-sm text-gray-500">We respond within 24 hours</p>
                   </div>
-                  
+                </motion.div>
+                
+                <motion.div 
+                  className="flex items-start space-x-4"
+                  whileHover={{ x: 5, transition: { duration: 0.3 } }}
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-[var(--emerald)] to-[var(--emerald-light)] rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Phone className="h-6 w-6 text-white" />
+                  </div>
                   <div>
-                    <Label htmlFor="service" className="text-white text-sm font-medium mb-2 block">
-                      Service
-                    </Label>
-                    <Select value={formData.service} onValueChange={(value) => handleInputChange("service", value)}>
-                      <SelectTrigger className="bg-[var(--charcoal)] border-[var(--emerald)]/30 text-white focus:border-[var(--emerald)] focus:ring-[var(--emerald)]">
-                        <SelectValue placeholder="Select a service" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[var(--charcoal)] border-[var(--emerald)]/30">
-                        <SelectItem value="full-stack">Full Stack Development</SelectItem>
-                        <SelectItem value="vps">VPS Services</SelectItem>
-                        <SelectItem value="seo">SEO Optimization</SelectItem>
-                        <SelectItem value="all">All Services</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Phone</h3>
+                    <p className="text-gray-600 dark:text-gray-300">+1 (555) 123-4567</p>
+                    <p className="text-sm text-gray-500">Mon-Fri, 9AM-6PM PST</p>
                   </div>
-                  
+                </motion.div>
+                
+                <motion.div 
+                  className="flex items-start space-x-4"
+                  whileHover={{ x: 5, transition: { duration: 0.3 } }}
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-[var(--emerald)] to-[var(--emerald-light)] rounded-lg flex items-center justify-center flex-shrink-0">
+                    <MapPin className="h-6 w-6 text-white" />
+                  </div>
                   <div>
-                    <Label htmlFor="message" className="text-white text-sm font-medium mb-2 block">
-                      Message
-                    </Label>
-                    <Textarea
-                      id="message"
-                      value={formData.message}
-                      onChange={(e) => handleInputChange("message", e.target.value)}
-                      className="bg-[var(--charcoal)] border-[var(--emerald)]/30 text-white focus:border-[var(--emerald)] focus:ring-[var(--emerald)] min-h-[120px]"
-                      placeholder="Tell us about your project..."
-                      required
-                    />
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Office</h3>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      San Francisco, CA<br />
+                      United States
+                    </p>
+                    <p className="text-sm text-gray-500">Remote-first team</p>
                   </div>
-                  
-                  <Button
-                    type="submit"
-                    disabled={contactMutation.isPending}
-                    className="w-full bg-[var(--emerald)] hover:bg-[var(--emerald-dark)] text-white font-semibold transition-all duration-300 transform hover:scale-105"
-                    size="lg"
-                  >
-                    {contactMutation.isPending ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-                      />
-                    ) : (
-                      <>
-                        <Send className="mr-2 h-5 w-5" />
-                        Send Message
-                      </>
-                    )}
-                  </Button>
-                </form>
+                </motion.div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl text-gray-900 dark:text-white">Why Choose ZnForge?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-[var(--emerald)] rounded-full flex-shrink-0"></div>
+                    <span>5+ years of web development experience</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-[var(--emerald)] rounded-full flex-shrink-0"></div>
+                    <span>200+ successful projects delivered</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-[var(--emerald)] rounded-full flex-shrink-0"></div>
+                    <span>Modern technologies and best practices</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-[var(--emerald)] rounded-full flex-shrink-0"></div>
+                    <span>Ongoing support and maintenance</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-[var(--emerald)] rounded-full flex-shrink-0"></div>
+                    <span>Transparent pricing and communication</span>
+                  </li>
+                </ul>
               </CardContent>
             </Card>
           </motion.div>

@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeDatabase } from "./scripts/init-database";
+// Database initialization handled in storage.ts
 
 const app = express();
 app.use(express.json());
@@ -38,13 +38,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize database on startup
-  try {
-    await initializeDatabase();
-  } catch (error) {
-    log(`Database initialization warning: ${error}`, "database");
-    log("Continuing with fallback storage...", "database");
-  }
+  // Storage initialization is handled in storage.ts
   
   const server = await registerRoutes(app);
 

@@ -2,7 +2,19 @@
 
 ## Overview
 
-ZnForge is a modern full-stack web application built with React, Express, and PostgreSQL. It's a business website for a web development agency that offers full-stack development, VPS hosting services, and SEO optimization. The application features a responsive design with animated UI components, a contact form system, and a professional portfolio showcase.
+ZnForge is a modern full-stack web application built with React, Express, and PostgreSQL. It's a business website for a web development agency that offers full-stack development, VPS hosting services, and SEO optimization. The application features a responsive design with animated UI components, a contact form system, a professional portfolio showcase, and an enhanced responsive live chat system.
+
+## Recent Changes (January 2025)
+✓ Migrated project from Replit Agent to Replit environment successfully
+✓ Enhanced LiveChat component with full responsive design and mobile-first approach
+✓ Added professional minimize/maximize functionality for desktop users
+✓ Implemented dynamic mobile vs desktop layouts with proper touch interactions
+✓ Added smooth scrolling, custom scrollbars, and improved message animations
+✓ Enhanced professional appearance with glass effects and modern UI patterns
+✓ RESTORED original single-page application interface after user feedback
+✓ Maintained all section components (Hero, Services, About, Team, Portfolio, Contact) on single page
+✓ Preserved smooth scrolling navigation and 3D floating elements
+✓ Kept admin panel functionality accessible via footer link
 
 ## User Preferences
 
